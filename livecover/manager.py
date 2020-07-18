@@ -33,8 +33,8 @@ class OpCoverage(BaseCoverage):
     def finish(self):
         try:
             self._finish()
-        except Exception:
-            pass
+        except Exception as e:
+            print("\n\n", e, "\n\n")
 
     def _finish(self):
         self.cov.stop()
