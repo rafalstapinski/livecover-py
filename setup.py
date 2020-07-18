@@ -1,21 +1,35 @@
-from distutils.core import setup
+from setuptools import setup
+
+version = "0.0.3"
+
+
+def get_readme_md_contents():
+    """read the contents of your README file"""
+    with open("README.md", encoding="utf-8") as f:
+        long_description = f.read()
+        return long_description
+
 
 setup(
     name="livecover",
     packages=["livecover"],
-    version="0.0.2",
+    version=version,
     license="BSD",
-    description="Python library to report live code usage",
+    description="The livecover python package",
+    long_description=get_readme_md_contents(),
+    long_description_content_type="text/markdown",
     author="Rafal Stapinski",
     author_email="stapinskirafal@gmail.com",
     url="https://github.com/rafalstapinski/livecover-py",
-    download_url="https://github.com/rafalstapinski/livecover-py/archive/0.0.2.tar.gz",
-    keywords=["live", "code", "coverage",],
+    download_url="https://github.com/rafalstapinski/livecover-py/archive/{}.tar.gz".format(
+        version
+    ),
+    keywords=["live code coverage",],
     install_requires=["coverage==5.2"],
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
-        "Topic :: Software Development :: Build Tools",
+        "Topic :: Software Development :: Quality Assurance",
         "License :: OSI Approved :: BSD License",
         "Programming Language :: Python :: 3.8",
     ],

@@ -9,6 +9,7 @@ pylint = "*"
 black = "==19.10b0"
 isort = "*"
 twine = "*"
+readme-renderer = {extras = ["md"],version = "*"}
 
 [packages]
 coverage = "*"
