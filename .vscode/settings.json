@@ -1,0 +1,29 @@
+{
+  "python.pythonPath": ".venv/bin/python",
+  "python.linting.flake8Enabled": true,
+  "python.linting.pylintEnabled": true,
+  "python.linting.flake8Args": ["--max-line-length=120", "--ignore W503"],
+  "python.linting.pylintArgs": [
+    "--disable=E0402,C0111",
+    "--enable=W0614",
+    "--init-hook='import sys; sys.path.append('.')'"
+  ],
+  "editor.formatOnSave": true,
+  "python.formatting.provider": "black",
+  "python.formatting.blackPath": ".venv/bin/black",
+  "python.linting.flake8Path": ".venv/bin/flake8",
+  "python.linting.pylintPath": ".venv/bin/pylint",
+  "[handlebars]": {
+    "editor.formatOnSave": true
+  },
+  "git.ignoreLimitWarning": true,
+  "python.sortImports.path": ".venv/bin/isort",
+  "python.sortImports.args": ["-w=120"],
+  "files.insertFinalNewline": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": true
+  },
+  "[python]": {
+    "editor.tabSize": 4
+  }
+}
