@@ -3,7 +3,7 @@ from distutils.core import setup
 setup(
     name="livecover",
     packages=["livecover"],
-    version="0.1",
+    version="0.0.1",
     license="BSD",
     description="TYPE YOUR DESCRIPTION HERE",  # Give a short description about your library
     author="Rafal Stapinski",  # Type in your name
