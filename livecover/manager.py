@@ -130,5 +130,7 @@ class NoopCoverage(BaseCoverage):
         ...
 
 
-def get_coverage(ratio: float = 1) -> BaseCoverage:
-    return OpCoverage() if random.random() < ratio else NoopCoverage()
+def get_coverage(ratio: float = 1, entrypoint: str = None) -> BaseCoverage:
+    return (
+        OpCoverage(entrypoint=entrypoint) if random.random() < ratio else NoopCoverage()
+    )
