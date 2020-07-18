@@ -5,12 +5,13 @@ setup(
     packages=["livecover"],
     version="0.0.1",
     license="BSD",
-    description="TYPE YOUR DESCRIPTION HERE",  # Give a short description about your library
-    author="Rafal Stapinski",  # Type in your name
-    author_email="stapinskirafal@gmail.com",  # Type in your E-Mail
-    url="https://github.com/stapinskirafal/livecover-py",
+    description="Python library to report live code usage",
+    author="Rafal Stapinski",
+    author_email="stapinskirafal@gmail.com",
+    url="https://github.com/rafalstapinski/livecover-py",
+    download_url="https://github.com/rafalstapinski/livecover-py/archive/0.0.1.tar.gz",
     keywords=["live", "code", "coverage",],
-    install_requires=["coverage==5.2"],  # I get to this in a second
+    install_requires=["coverage==5.2"],
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
