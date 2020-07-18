@@ -23,12 +23,12 @@ class BaseCoverage:
 
 class OpCoverage(BaseCoverage):
 
-    reference: Optional[str]
+    entrypoint: Optional[str]
 
-    def __init__(self, reference: Optional[str] = None):
+    def __init__(self, entrypoint: Optional[str] = None):
         self.cov = coverage.Coverage(omit=["*site-packages*"], data_file=None)
         self.cov.start()
-        self.reference = reference
+        self.entrypoint = entrypoint
 
     def finish(self):
         try:
@@ -114,11 +114,11 @@ class OpCoverage(BaseCoverage):
         self._send(called_functions)
 
     def _send(self, called_functions: set):
-        report = {"called": list(called_functions), "reference": self.reference}
+        report = {"called": list(called_functions), "entrypoint": self.entrypoint}
 
         message = bytes(json.dumps(report), "utf-8")
         open_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        open_socket.sendto(message, ("127.0.0.1", 8125))
+        open_socket.sendto(message, ("d.livecover.io", 80))
         open_socket.close()
 
 
