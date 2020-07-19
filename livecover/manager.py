@@ -9,6 +9,7 @@ from coverage.report import get_analysis_to_report
 from coverage.html import HtmlDataGeneration
 
 INDENTATION_DEPTH = 4
+CHUNK_SIZE = 10
 
 
 class BaseCoverage:
@@ -34,7 +35,7 @@ class OpCoverage(BaseCoverage):
         try:
             self._finish()
         except Exception as e:
-            print("\n\n", e, "\n\n")
+            pass
 
     def _finish(self):
         self.cov.stop()
@@ -46,7 +47,7 @@ class OpCoverage(BaseCoverage):
         if not isinstance(morfs, (list, tuple, set)):
             morfs = [morfs]
 
-        called_functions = set()
+        called_functions = []
 
         for file_reporter, analysis in get_analysis_to_report(self.cov, morfs):
             file_data = datagen.data_for_file(file_reporter, analysis)
@@ -109,25 +110,35 @@ class OpCoverage(BaseCoverage):
                 called_function = next(
                     d[1] for d in definitions if d[0] < executed_line
                 )
-                called_functions.add(called_function)
+                called_functions.append(called_function)
 
         self._send(called_functions)
 
-    def _send(self, called_functions: set):
+    def _send(self, called_functions: list):
         report = {"called": list(called_functions), "entrypoint": self.entrypoint}
 
-        message = bytes(json.dumps(report), "utf-8")
+        chunks = [
+            called_functions[i : i + n]
+            for i in range(0, len(called_functions), CHUNK_SIZE)
+        ]
+
         open_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        open_socket.sendto(message, ("d.livecover.io", 80))
+
+        for chunk in chunks:
+            byte_message = bytes(
+                json.dumps({"called": chunk, "entrypoint": self.entrypoint})
+            )
+            open_socket.sendto(message, ("d.livecover.io", 80))
+
         open_socket.close()
 
 
 class NoopCoverage(BaseCoverage):
     def __init__(self):
-        ...
+        pass
 
     def finish(self):
-        ...
+        pass
 
 
 def get_coverage(ratio: float = 1, entrypoint: str = None) -> BaseCoverage:
