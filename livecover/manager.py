@@ -34,7 +34,7 @@ class OpCoverage(BaseCoverage):
     def finish(self):
         try:
             self._finish()
-        except Exception as e:
+        except Exception:
             pass
 
     def _finish(self):
@@ -115,10 +115,8 @@ class OpCoverage(BaseCoverage):
         self._send(called_functions)
 
     def _send(self, called_functions: list):
-        report = {"called": list(called_functions), "entrypoint": self.entrypoint}
-
         chunks = [
-            called_functions[i : i + n]
+            called_functions[i : i + CHUNK_SIZE]
             for i in range(0, len(called_functions), CHUNK_SIZE)
         ]
 
@@ -126,9 +124,9 @@ class OpCoverage(BaseCoverage):
 
         for chunk in chunks:
             byte_message = bytes(
-                json.dumps({"called": chunk, "entrypoint": self.entrypoint})
+                json.dumps({"called": chunk, "entrypoint": self.entrypoint}), "utf-8"
             )
-            open_socket.sendto(message, ("d.livecover.io", 80))
+            open_socket.sendto(byte_message, ("d.livecover.io", 80))
 
         open_socket.close()
 
