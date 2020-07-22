@@ -64,7 +64,7 @@ class OpCoverage:
     def _send(ns):
         self.sock.sendto(
             bytes(json.dumps({"called": ns, "entrypoint": self.entrypoint}), "utf-8"),
-            ("p.livecover.io", 80),
+            ("d.livecover.io", 80),
         )
 
     def __init__(self, entrypoint: Optional[str] = None):
