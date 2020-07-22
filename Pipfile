@@ -12,7 +12,6 @@ twine = "*"
 readme-renderer = {extras = ["md"],version = "*"}
 
 [packages]
-coverage = "*"
 
 [requires]
 python_version = "3.8"

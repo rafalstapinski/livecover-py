@@ -1,145 +1,85 @@
 import abc
+import sys
 import json
+import os
 import random
 import socket
 from typing import Optional
-
-import coverage
-from coverage.report import get_analysis_to_report
-from coverage.html import HtmlDataGeneration
-
-INDENTATION_DEPTH = 4
-CHUNK_SIZE = 10
+import inspect
 
 
-class BaseCoverage:
-    @abc.abstractmethod
-    def __init__(self):
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def finish(self):
-        raise NotImplementedError
-
-
-class OpCoverage(BaseCoverage):
+class OpCoverage:
 
     entrypoint: Optional[str]
 
+    def _get_namespace(self, frame, relpath):
+        source, lineno = inspect.findsource(frame)
+
+        if source[lineno].startswith("@"):
+            lineno += 1
+
+        if relpath in self.cache:
+            if lineno in self.cache[relpath]:
+                return self.cache[relpath][lineno]
+
+        prev_leading_spaces = len(source[lineno]) - len(source[lineno].lstrip())
+
+        namespace = [source[lineno]]
+
+        while lineno > 0:
+            lineno -= 1
+            if "def " in source[lineno] or "class " in source[lineno]:
+                leading_spaces = len(source[lineno]) - len(source[lineno].lstrip())
+                if leading_spaces < prev_leading_spaces:
+                    namespace.insert(0, source[lineno])
+                    prev_leading_spaces = leading_spaces
+
+                if leading_spaces == 0:
+                    break
+
+        _namespace = relpath.replace("/", ".").replace(".py", "")
+        for ns in namespace:
+            ns = ns.lstrip().split(" ")[1].split("(")[0].split(":")[0]
+            _namespace += ".{}".format(ns)
+
+        if relpath in self.cache:
+            self.cache[relpath][lineno] = _namespace
+        else:
+            self.cache[relpath] = {}
+            self.cache[relpath][lineno] = _namespace
+
+        return _namespace
+
+    def _report(self, frame, event, arg):
+        if event == "call":
+            try:
+                relpath = os.path.relpath(frame.f_code.co_filename, self.cwd)
+                if relpath.startswith("..") or "site-packages" in relpath:
+                    return
+                ns = self._get_namespace(frame, relpath)
+                self._send(ns)
+            except Exception:
+                pass
+
+    def _send(ns):
+        self.sock.sendto(
+            bytes(json.dumps({"called": ns, "entrypoint": self.entrypoint}), "utf-8"),
+            ("p.livecover.io", 80),
+        )
+
     def __init__(self, entrypoint: Optional[str] = None):
-        self.cov = coverage.Coverage(omit=["*site-packages*"], data_file=None)
-        self.cov.start()
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.entrypoint = entrypoint
-
-    def finish(self):
-        try:
-            self._finish()
-        except Exception:
-            pass
-
-    def _finish(self):
-        self.cov.stop()
-
-        morfs = self.cov._data.measured_files()
-
-        datagen = HtmlDataGeneration(self.cov)
-
-        if not isinstance(morfs, (list, tuple, set)):
-            morfs = [morfs]
-
-        called_functions = []
-
-        for file_reporter, analysis in get_analysis_to_report(self.cov, morfs):
-            file_data = datagen.data_for_file(file_reporter, analysis)
-            definitions = []
-            namespace = []
-
-            for lineno, ldata in enumerate(file_data.lines, 1):
-                token_types = [t[0] for t in ldata.tokens]
-                token_names = [t[1] for t in ldata.tokens]
-
-                if len(token_types) == 0:
-                    continue
-
-                depth = 0
-
-                # get depths
-                if token_types[0] == "ws":
-                    _, indentation = token_types.pop(0), token_names.pop(0)
-
-                    # dont update depths if remainder is empty line
-                    if len(token_types) == 0:
-                        continue
-
-                    depth = int(len(indentation) / INDENTATION_DEPTH)
-
-                if token_types[0] == "key" and token_names[0] == "async":
-                    token_types = token_types[2:]
-                    token_names = token_names[2:]
-
-                # if definition
-                if token_types[0] == "key" and token_names[0] in ("def", "class"):
-
-                    definition_name = token_names[2]
-
-                    if depth > (len(namespace) + 1):
-                        namespace.append(definition_name)
-
-                    elif depth == (len(namespace) + 1):
-                        if len(namespace) == 0:
-                            namespace.append(definition_name)
-                        else:
-                            namespace[-1] = definition_name
-
-                    else:
-                        namespace = namespace[:depth]
-                        namespace.append(definition_name)
-
-                    module_path = "{}.{}".format(
-                        file_reporter.relative_filename()
-                        .replace("/", ".")
-                        .replace(".py", ""),
-                        ".".join(namespace),
-                    )
-
-                    definitions.append((lineno, module_path))
-
-            executed_lines = sorted(analysis.executed)
-            definitions = list(sorted(definitions, key=lambda d: d[0], reverse=True))
-            for executed_line in executed_lines:
-                called_function = next(
-                    d[1] for d in definitions if d[0] < executed_line
-                )
-                called_functions.append(called_function)
-
-        self._send(called_functions)
-
-    def _send(self, called_functions: list):
-        chunks = [
-            called_functions[i : i + CHUNK_SIZE]
-            for i in range(0, len(called_functions), CHUNK_SIZE)
-        ]
-
-        open_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-        for chunk in chunks:
-            byte_message = bytes(
-                json.dumps({"called": chunk, "entrypoint": self.entrypoint}), "utf-8"
-            )
-            open_socket.sendto(byte_message, ("d.livecover.io", 80))
-
-        open_socket.close()
+        self.cwd = os.getcwd()
+        self.cache = {}
+        sys.settrace(self._report)
 
 
-class NoopCoverage(BaseCoverage):
-    def __init__(self):
-        pass
-
-    def finish(self):
-        pass
+class NoopCoverage:
+    pass
 
 
-def get_coverage(ratio: float = 1, entrypoint: str = None) -> BaseCoverage:
+def get_coverage(ratio: float = 1, entrypoint: str = None):
     return (
         OpCoverage(entrypoint=entrypoint) if random.random() < ratio else NoopCoverage()
     )
