@@ -61,7 +61,7 @@ class OpCoverage:
             except Exception:
                 pass
 
-    def _send(ns):
+    def _send(self, ns):
         self.sock.sendto(
             bytes(json.dumps({"called": ns, "entrypoint": self.entrypoint}), "utf-8"),
             ("d.livecover.io", 80),
