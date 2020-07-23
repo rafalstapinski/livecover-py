@@ -59,10 +59,13 @@ class OpCoverage:
     def _report(self, frame, event, arg):
         if event == "call":
             try:
+                if (
+                    "site-packages" in frame.f_code.co_filename
+                    or "/lib/" in frame.f_code.co_filename
+                ):
+                    return
                 relpath = os.path.relpath(frame.f_code.co_filename, self.cwd)
-                if relpath.startswith("..") or "site-packages" in relpath:
-                    if self.debug:
-                        print("skip", relpath)
+                if relpath.startswith(".."):
                     return
                 ns = self._get_namespace(frame, relpath)
                 self._send(ns)
