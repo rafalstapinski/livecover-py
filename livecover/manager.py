@@ -15,7 +15,7 @@ class OpCoverage:
     def _get_namespace(self, frame, relpath):
         source, lineno = inspect.findsource(frame)
 
-        if source[lineno].startswith("@"):
+        while source[lineno].startswith("@"):
             lineno += 1
 
         if relpath in self.cache:
@@ -25,6 +25,9 @@ class OpCoverage:
         prev_leading_spaces = len(source[lineno]) - len(source[lineno].lstrip())
 
         namespace = [source[lineno]]
+
+        if self.debug:
+            print("ns", namespace)
 
         while lineno > 0:
             lineno -= 1
@@ -48,6 +51,9 @@ class OpCoverage:
             self.cache[relpath] = {}
             self.cache[relpath][lineno] = _namespace
 
+        if self.debug:
+            print("ns", _namespace)
+
         return _namespace
 
     def _report(self, frame, event, arg):
@@ -55,6 +61,8 @@ class OpCoverage:
             try:
                 relpath = os.path.relpath(frame.f_code.co_filename, self.cwd)
                 if relpath.startswith("..") or "site-packages" in relpath:
+                    if self.debug:
+                        print("skip", relpath)
                     return
                 ns = self._get_namespace(frame, relpath)
                 self._send(ns)
@@ -67,11 +75,12 @@ class OpCoverage:
             ("d.livecover.io", 80),
         )
 
-    def __init__(self, entrypoint: Optional[str] = None):
+    def __init__(self, entrypoint: Optional[str] = None, debug=False):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.entrypoint = entrypoint
         self.cwd = os.getcwd()
         self.cache = {}
+        self.debug = debug
         sys.settrace(self._report)
 
 
