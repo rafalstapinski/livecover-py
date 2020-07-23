@@ -1,6 +1,6 @@
 from setuptools import setup
 
-version = "0.0.13"
+version = "0.0.14"
 
 
 def get_readme_md_contents():

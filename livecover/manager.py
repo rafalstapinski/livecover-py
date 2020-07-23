@@ -62,6 +62,7 @@ class OpCoverage:
                 if (
                     "site-packages" in frame.f_code.co_filename
                     or "/lib/" in frame.f_code.co_filename
+                    or frame.f_code.co_filename.startswith("<")
                 ):
                     return
                 relpath = os.path.relpath(frame.f_code.co_filename, self.cwd)
