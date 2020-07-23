@@ -66,8 +66,9 @@ class OpCoverage:
                     return
                 ns = self._get_namespace(frame, relpath)
                 self._send(ns)
-            except Exception:
-                pass
+            except Exception as e:
+                if self.debug:
+                    print("e", e)
 
     def _send(self, ns):
         self.sock.sendto(
@@ -88,7 +89,9 @@ class NoopCoverage:
     pass
 
 
-def get_coverage(ratio: float = 1, entrypoint: str = None):
+def get_coverage(ratio: float = 1, entrypoint: str = None, debug=False):
     return (
-        OpCoverage(entrypoint=entrypoint) if random.random() < ratio else NoopCoverage()
+        OpCoverage(entrypoint=entrypoint, debug=debug)
+        if random.random() < ratio
+        else NoopCoverage()
     )
