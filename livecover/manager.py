@@ -71,7 +71,7 @@ class OpCoverage:
                 self._send(ns)
             except Exception as e:
                 if self.debug:
-                    print("e", e)
+                    print("e", frame.f_code.co_filename, e)
 
     def _send(self, ns):
         self.sock.sendto(
